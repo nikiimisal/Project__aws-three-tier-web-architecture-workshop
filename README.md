@@ -155,7 +155,7 @@ availability and fault tolerance.
 
 
 ## Setup the Ec2-instance and create the IAM (WEB Tier)
-**REF:** [web-tier](https://github.com/nikiimisal/Project__aws-three-tier-web-architecture-workshop/tree/main/application-code/web-tier)
+**REF:** [web-tier](https://github.com/nikiimisal/Project__aws-three-tier-web-architecture-workshop__Adding-some-services/tree/main/application-code/web-tier)
 
 **Only Setup the Packages:**  
 - Nginx  
@@ -214,7 +214,7 @@ npm run build
 ---
 
 ## Setup the Ec2-instance and create the IAM (APP Tier)
-**REF:** [app-tier](https://github.com/nikiimisal/Project__aws-three-tier-web-architecture-workshop/tree/main/application-code/app-tier)
+**REF:** [app-tier](https://github.com/nikiimisal/Project__aws-three-tier-web-architecture-workshop__Adding-some-services/tree/main/application-code/app-tier)
 
 **Only Setup the Packages:**  
 - install  
