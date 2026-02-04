@@ -67,7 +67,7 @@ availability and fault tolerance.
 
 ## Architecture Overview
 
-![Architecture Diagram](https://catalog.us-east-1.prod.workshops.aws/workshops/85cd2bb2-7f79-4e96-bdee-8078e469752a/en-US)
+![Architecture Diagram](https://github.com/nikiimisal/Project__aws-three-tier-web-architecture-workshop/blob/main/application-code/web-tier/src/assets/3TierArch.png?raw=true)
 
 
 ---
