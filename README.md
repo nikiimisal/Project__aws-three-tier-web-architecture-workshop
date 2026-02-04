@@ -2,7 +2,9 @@
 
 # AWS Three Tier Web Architecture Workshop
 
+>This project is inspired by and implemented using references from an official AWS workshop available on the AWS website👉[click here](https://catalog.us-east-1.prod.workshops.aws/workshops/85cd2bb2-7f79-4e96-bdee-8078e469752a/en-US/introduction)
 
+>>I have created a deployment video and uploaded it on YouTube. You can use it as a reference.👉[click here]()
 
 
 ##   🔷 Project Overview
