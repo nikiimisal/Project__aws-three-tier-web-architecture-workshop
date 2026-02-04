@@ -29,3 +29,428 @@ See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more inform
 
 This library is licensed under the MIT-0 License. See the LICENSE file.
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# AWS Three Tier Web Architecture Workshop
+
+
+
+
+##   🔷 Project Overview
+
+This project is a hands-on AWS Three-Tier Web Architecture Workshop designed to demonstrate how a <br>
+scalable, highly available, and secure application can be deployed on AWS using core cloud services.
+
+The architecture follows the three-tier model, separating the infrastructure into:
+
+- Web Tier
+- Application Tier
+- Database Tier
+
+Each tier is deployed within a custom VPC and distributed across multiple Availability Zones to ensure high <br>
+availability and fault tolerance.
+
+
+---
+
+##  🏗️ Architecture Design(Layers)
+
+• A ***public-facing Application Load Balancer*** receives incoming client traffic<br> 
+  and forwards it to the ***Web Tier EC2 instances***.<br> 
+• The Web Tier runs ***Nginx***, which serves frontend content and routes API requests <br> 
+  to the internal ***Application Load Balancer***.<br> 
+• The internal load balancer distributes traffic to the ***Application Tier***, <br> 
+  which runs a***Node.js backend service***.<br> 
+• The Application Tier communicates securely with a ***MySQL database*** hosted on <br> 
+  ***Amazon RDS***, deployed in private subnets.<br> 
+• ***Auto Scaling Groups*** and ***health checks*** are configured at each layer to <br> 
+  maintain availability and scalability.
+
+---
+
+###    🔐 Security & Networking
+
+- Public and private subnets are used to isolate resources
+- Security Groups enforce strict, tier-based access control
+- Database resources are fully private with no direct internet access
+- IAM roles are used to securely grant permissions to EC2 instances
+
+---
+
+###   📈 Scalability & Availability
+
+- Application Load Balancers distribute traffic efficiently
+- Auto Scaling dynamically adjusts capacity based on demand
+- Multi-AZ deployment improves resilience and uptime
+
+---
+
+###    🎯 Purpose of the Workshop
+
+- This workshop is intended to:
+  - Provide hands-on experience with AWS core services
+  - Help understand real-world three-tier architecture design
+  - Demonstrate AWS best practices for security, scalability, and availability
+  - Serve as a foundation project for DevOps, Cloud, and Solution Architect roles
+
+
+## Architecture Overview
+![Architecture Diagram](https://catalog.us-east-1.prod.workshops.aws/workshops/85cd2bb2-7f79-4e96-bdee-8078e469752a/en-US)
+
+
+---
+
+
+
+###   The following AWS services are required and will be used in this project.
+
+```
+1. VPC (6 Subnets, 5 Route Tables, 1 IGW, 1 NAT)
+2. Security Group (Cross-connection)
+3. EC2
+4. Auto Scaling Group (ASG with IAM & Launch Template)
+5. ALB (2 Target Groups)
+6. IAM (for Image Build & Access Control)
+7. RDS (MySQL)
+6. Route 53
+```
+
+
+---
+
+## Create a Security Group
+
+| SG name      | inbound        | Access         | Description                                  |
+|--------------|----------------|---------------|----------------------------------------------|
+| Jump Server  | 22             | MY-ip         | access from my laptop                        |
+| 1. web-frontend-alb     | 80,         | 0.0.0.0/24    | all access from internet                     |
+| 2. Web-srv-sg      | 80,  22    | 1. web-frontend-alb       | only front-alb and jump server access        |
+|              |                | jump-server   |                                              |
+| 3. app-Internal-alb-sg     |  80,  | 2. Web-srv-sg      | only web-srv                                 |
+| 4. app-Srv-sg      | 4000,  22 | 3. app-Internal-alb-sg | only 3. app-Internal-alb-sg and jump server access          |
+|              |                | jump-server   |                                              |
+| 5. DB-srv       | 3306, 22       | 4. app-Srv-sg       | only app-srv and jump server access          |
+|              |      3306          | jump-server   |                                              |
+
+---
+
+## Create a VPC
+
+| #  | Component         | Name                  | CIDR / Details                               |
+|----|-------------------|-----------------------|----------------------------------------------|
+| 1  | VPC              | 3-tier-vpc            | 10.75.0.0/16                                  |
+| 12 | Subnets          | Public-Subnet-1a      | 10.75.1.0/24                                  |
+|    |                  | Public-Subnet-1b      | 10.75.2.0/24                                  |
+|    |                  | app-private-Subnet-1a | 10.75.3.0/24                                  |
+|    |                  | app-private-Subnet-1b | 10.75.4.0/24                                  |
+|    |                  | db-private-Subnet-1a  | 10.75.5.0/24                                  |
+|    |                  | db-private-Subnet-1b  | 10.75.6.0/24                                  |
+
+---
+## Create a role for both web and app tier
+
+- 3-tier-role:
+    - AmazonS3ReadOnlyAccess
+    - AmazonSSMManagedInstanceCore
+
+---
+
+## Create a Mysql in the RDS
+
+### First Create the subnet Group
+
+| Name    | three-subnet-gp-rds   |
+|---------|-----------------------|
+| VPC     | three-tier-rds-subnetgroup            |
+| AZ      | 1a, b, c              |
+| Subnets | DB-Private-Subnet-1a  |
+|         | DB-Private-Subnet-1b  |
+
+
+| Parameter                          | Value                |
+|-------------------------------------|----------------------|
+| DB instance identifier              | db-3tier             |
+| Master username                     | admin                |
+| Self managed password               | SuperadminPassword   |
+| Instance class (Burstable)          | db.t3.small          |
+| Storage                             | 20 GB                |
+| Virtual private cloud VPC           | 3-tier-vpc           |
+| Security Group (SG)                 | db-srv               |
+| Enable Enhanced monitoring          | Unchecked            |
+---
+
+
+
+
+## Setup the Ec2-instance and create the IAM (WEB Tier)
+**REF:** [web-tier](https://github.com/nikiimisal/Project__aws-three-tier-web-architecture-workshop/tree/main/application-code/web-tier)
+
+**Only Setup the Packages:**  
+- Nginx  
+- nvm  
+
+
+```bash
+sudo yum install nginx -y
+sudo systemctl start nginx
+sudo systemctl enable nginx
+sudo service nginx restart
+sudo chkconfig nginx on
+sudo yum install git -y
+
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+sudo ./aws/install
+
+```
+
+```bash
+# Download and install nvm:
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+
+# in lieu of restarting the shell
+\. "$HOME/.nvm/nvm.sh"
+
+# Download and install Node.js:
+nvm install 22
+
+# Verify the Node.js version:
+node -v # Should print "v22.19.0".
+nvm current # Should print "v22.19.0".
+
+# Verify npm version:
+npm -v # Should print "10.9.3".
+```
+
+```bash
+git clone https://github.com/harishnshetty/aws-three-tier-web-architecture-workshop.git
+```
+
+```bash
+sudo chown -R ec2-user:ec2-user /home/ec2-user
+sudo chmod -R 755 /home/ec2-user
+```
+
+```bash
+cd ~
+cp -rf ~/aws-three-tier-web-architecture-workshop/application-code/web-tier .
+cd ~/web-tier
+npm install 
+npm run build
+```
+
+---
+
+## Setup the Ec2-instance and create the IAM (APP Tier)
+**REF:** [app-tier](https://github.com/nikiimisal/Project__aws-three-tier-web-architecture-workshop/tree/main/application-code/app-tier)
+
+**Only Setup the Packages:**  
+- install  
+    - mysql client  
+    - nvm  
+    - pm2  
+
+
+
+```bash
+sudo wget https://dev.mysql.com/get/mysql80-community-release-el9-1.noarch.rpm
+sudo dnf install mysql80-community-release-el9-1.noarch.rpm -y
+sudo rpm --import https://repo.mysql.com/RPM-GPG-KEY-mysql-2023
+sudo dnf install mysql-community-client -y
+mysql --version
+```
+```bash
+mysql -h CHANGE-TO-YOUR-RDS-ENDPOINT -u CHANGE-TO-USER-NAME -p
+```
+
+**Ref:** https://catalog.us-east-1.prod.workshops.aws/workshops/85cd2bb2-7f79-4e96-bdee-8078e469752a/en-US/part3/configuredatabase
+
+```sql
+CREATE DATABASE webappdb;
+SHOW DATABASES;
+USE webappdb;
+CREATE TABLE IF NOT EXISTS transactions(id INT NOT NULL AUTO_INCREMENT, amount DECIMAL(10,2), description VARCHAR(100), PRIMARY KEY(id));
+SHOW TABLES;
+INSERT INTO transactions (amount,description) VALUES ('400','groceries');
+SELECT * FROM transactions;
+```
+
+Immediately update the DBconfig.js of database Details
+
+```bash 
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+sudo ./aws/install
+
+```
+
+```bash
+# Download and install nvm:
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+
+# in lieu of restarting the shell
+\. "$HOME/.nvm/nvm.sh"
+
+# Download and install Node.js:
+nvm install 22
+npm install -g pm2
+
+# Verify the Node.js version:
+node -v # Should print "v22.19.0".
+nvm current # Should print "v22.19.0".
+
+# Verify npm version:
+npm -v # Should print "10.9.3".
+```
+
+---
+```bash
+https://github.com/nikiimisal/Project__aws-three-tier-web-architecture-workshop.git
+```
+
+```bash
+
+
+cd ~
+cp -rf ~/aws-three-tier-web-architecture-workshop/application-code/app-tier .
+
+sudo chown -R ec2-user:ec2-user /home/ec2-user
+sudo chmod -R 755 /home/ec2-user/app-tier
+
+cd ~/app-tier
+npm install 
+
+```
+
+```bash
+npm audit fix
+pm2 start index.js
+pm2 startup
+
+pm2 save
+```
+```bash
+curl http://localhost:4000/health
+```
+
+```bash
+curl http://localhost:4000/transaction
+```
+
+## Create images app Tier
+- APP-Tier-AMI-IMAGE  
+
+---
+
+## Create app launch template
+
+| Parameter              | Value                |
+|------------------------|----------------------|
+| Name                   | app-tier-lt          |
+| My AMI's               | app-Tier-IAM-IMAGE   |
+| Security Groups        | app-Srv-sg           |
+| IAM Instance Profile   | 3-tier-role      |
+
+
+
+---
+
+## Create target group for app-tier
+
+| Tier     | Name     | Port | VPC        | Health Check |
+|----------|----------|------|------------|--------------|
+| App Tier | app-tier | 4000 | 3-tier-vpc | /health      |
+
+---
+
+## Create Load balancers
+
+### Application Load Balancers
+| Load Balancer | Name     | Type            | VPC        | Availability Zones                                 | Security Groups | Listeners & Routing   |
+|---------------|----------|-----------------|------------|---------------------------------------------------|-----------------|----------------------|
+| app-alb       | app-alb  | Internal-facing | 3-tier-vpc | App-Private-Subnet-1a, 1b                   | app-Internal-alb-sg         | 80 app-tier          |
+---
+
+
+---
+## Create Auto Scaling
+
+| Name            | Launch template | Instance types | VPC        | Subnets (AZs)                       | Load balancer | Desired | min | max | Scaling policy | Notifications    | Tag      |
+|-----------------|----------------|---------------|------------|--------------------------------------|---------------|---------|-----|-----|---------------|-----------------|----------|
+| app-tier-asg    | app-tier-lb    | t2.micro      | 3-tier-vpc | app-Private-Subnet-1a, 1b      | app-tier      | 2      | 2   | 2   | 60            |     | app-asg  |
+
+---
+
+## Immediately update the `nginx.config` of your internal load balancer Address and push to repo
+
+```bash
+sudo chown -R ec2-user:ec2-user /home/ec2-user
+sudo chmod -R 755 /home/ec2-user
+
+sudo mv /etc/nginx/nginx.conf /etc/nginx/nginx-backup.conf 
+sudo cp -f /home/ec2-user/aws-three-tier-web-architecture-workshop/application-code/nginx.conf /etc/nginx/nginx.conf
+
+# Validate config before reload
+sudo nginx -t
+
+# Restart nginx
+sudo systemctl restart nginx
+sudo systemctl enable nginx
+```
+
+
+
+## Create images app Tier
+- WEb-Tier-AMI-IMAGE  
+
+## Create web launch template
+
+| Parameter              | Value                |
+|------------------------|----------------------|
+| Name                   | web-tier-lt          |
+| My AMI's               | Web-Tier-AMI-IMAGE   |
+| Security Groups        | Web-srv-sg           |
+| IAM Instance Profile   | 3-tier-role          |
+
+
+## Create target group 
+
+| Tier      | Name      | Port  | VPC         | Health-check  |
+|-----------|-----------|-------|-------------|---------------|
+| Web Tier  | Web-tier  | 80    | 3-tier-vpc  |               |
+
+---
+
+
+## Create Load balancers
+
+### Application Load Balancers
+| Load Balancer | Name     | Type            | VPC        | Availability Zones                                 | Security Groups | Listeners & Routing   |
+|---------------|----------|-----------------|------------|---------------------------------------------------|-----------------|----------------------|
+| web-alb       | web-alb  | Internet-facing | 3-tier-vpc | Public-Subnet-1a, 1b,                         | web-frontend-alb        | 80 web-tier          |
+---
+
+---
+## Create Auto Scaling
+
+| Name            | Launch template | Instance types | VPC        | Subnets (AZs)                       | Load balancer | Desired | min | max | Scaling policy | Notifications    | Tag      |
+|-----------------|----------------|---------------|------------|--------------------------------------|---------------|---------|-----|-----|---------------|-----------------|----------|
+| web-tier-asg    | web-tier-lb    | t2.micro      | 3-tier-vpc | public-Subnet-1a, 1b       | web-tier      | 2       | 2   | 2   | 60            |     | web-asg  |
+
+---
+
