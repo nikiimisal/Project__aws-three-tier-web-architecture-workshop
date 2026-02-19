@@ -282,8 +282,8 @@ https://github.com/nikiimisal/Project__aws-three-tier-web-architecture-workshop.
 
 ```bash
 cd ~
-cp -rf ~/aws-three-tier-web-architecture-workshop/application-code/web-tier .
-cd ~/web-tier
+cp -rf ~/aws-three-tier-web-architecture-workshop/application-code/app-tier .
+cd ~/app-tier
 npm install 
 ```
 
