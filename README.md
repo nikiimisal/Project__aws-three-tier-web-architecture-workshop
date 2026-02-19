@@ -281,17 +281,10 @@ https://github.com/nikiimisal/Project__aws-three-tier-web-architecture-workshop.
 ```
 
 ```bash
-
-
 cd ~
-cp -rf ~/aws-three-tier-web-architecture-workshop/application-code/app-tier .
-
-sudo chown -R ec2-user:ec2-user /home/ec2-user
-sudo chmod -R 755 /home/ec2-user/app-tier
-
-cd ~/app-tier
+cp -rf ~/aws-three-tier-web-architecture-workshop/application-code/web-tier .
+cd ~/web-tier
 npm install 
-
 ```
 
 ```bash
