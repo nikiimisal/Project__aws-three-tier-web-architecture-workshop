@@ -195,7 +195,7 @@ npm -v # Should print "10.9.3".
 ```
 
 ```bash
-git clone https://github.com/harishnshetty/aws-three-tier-web-architecture-workshop.git
+git clone https://github.com/nikiimisal/Project__aws-three-tier-web-architecture-workshop.git
 ```
 
 ```bash
@@ -205,7 +205,7 @@ sudo chmod -R 755 /home/ec2-user
 
 ```bash
 cd ~
-cp -rf ~/aws-three-tier-web-architecture-workshop/application-code/web-tier .
+cp -rf ~/Project__aws-three-tier-web-architecture-workshop/application-code/web-tier .
 cd ~/web-tier
 npm install 
 npm run build
