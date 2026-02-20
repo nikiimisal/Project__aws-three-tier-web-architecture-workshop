@@ -353,7 +353,7 @@ sudo chown -R ec2-user:ec2-user /home/ec2-user
 sudo chmod -R 755 /home/ec2-user
 
 sudo mv /etc/nginx/nginx.conf /etc/nginx/nginx-backup.conf 
-sudo cp -f /home/ec2-user/aws-three-tier-web-architecture-workshop/application-code/nginx.conf /etc/nginx/nginx.conf
+sudo cp -f /home/ec2-user/Project__aws-three-tier-web-architecture-workshop/application-code/nginx.conf /etc/nginx/nginx.conf
 
 # Validate config before reload
 sudo nginx -t
